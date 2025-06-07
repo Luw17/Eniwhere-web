@@ -1,0 +1,52 @@
+.card {
+  width: 192px;
+  background: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card .title {
+  background: #bfdbfe;
+  text-align: center;
+  font-weight: 600;
+  padding: 0.25rem;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.card .image {
+  height: 112px;
+  background: #e5e7eb;
+  margin-top: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.card .info {
+  text-align: center;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.card .device {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.card .status {
+  margin-top: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.status-yellow {
+  background: #fef08a;
+}
+.status-red {
+  background: #fecaca;
+}
+.status-blue {
+  background: #bfdbfe;
+}
