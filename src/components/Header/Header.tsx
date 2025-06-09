@@ -1,3 +1,4 @@
+// src/components/Header/Header.tsx
 import styles from './Header.module.css';
 import { FiMenu, FiLogOut } from 'react-icons/fi';
 

@@ -1,6 +1,4 @@
 // src/pages/HomePage/HomePage.tsx
-import Sidebar from "../../components/Sidebar/Sidebar";
-import Header from "../../components/Header/Header";
 import Section from "../../components/Section/Section";
 import styles from "./HomePage.module.css";
 
@@ -77,9 +75,7 @@ export default function HomePage() {
 
   return (
     <div className={styles.container}>
-      <Sidebar />
       <main className={styles.main}>
-        <Header title="BEM VINDO(A), RENOVE!" />
         <Section title="Serviços pendentes" link="Ver mais" data={pendingServices} />
         <Section title="Criadas recentemente" link="Ver todos" data={recentServices} />
       </main>
