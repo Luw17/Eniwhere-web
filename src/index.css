@@ -1,9 +1,21 @@
-.home-container {
-  display: flex;
-  min-height: 100vh;
+/* Garante que a altura da tela seja herdada corretamente */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #c5ddfd 20%, #f1f6fe 60%, #c5ddfd 90%);
 }
 
+/* Layout principal da home */
+.home-container {
+  display: flex;
+  height: 100vh; /* Em vez de min-height */
+  overflow: hidden; /* Evita estouros para fora da tela */
+}
+
+/* Barra lateral */
 .sidebar {
   width: 220px;
   background-color: #2c3e50;
@@ -25,6 +37,7 @@
   cursor: pointer;
 }
 
+/* Conteúdo principal */
 .main-content {
   flex-grow: 1;
   padding: 2rem;
@@ -37,6 +50,7 @@ header {
   align-items: center;
 }
 
+/* Botão de nova ordem */
 .new-order {
   padding: 0.5rem 1rem;
   background-color: #2980b9;
@@ -46,6 +60,7 @@ header {
   cursor: pointer;
 }
 
+/* Seções da home */
 section {
   margin-top: 2rem;
 }
@@ -64,8 +79,9 @@ section {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* Indicadores coloridos nas cards */
 .card.yellow {
-  border-left: 5px solid #f1c40f;
+  border-left: 5px solid #fffca5;
 }
 
 .card.green {

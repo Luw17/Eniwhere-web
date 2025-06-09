@@ -1,39 +1,63 @@
 // src/App.tsx
 import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import styles from "./App.module.css";
+import HomePage from "./pages/HomePage/HomePage";
+import LoginPage from "./pages/LoginPage/LoginPage";
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleToggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
 
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
   const handleLogout = () => {
+    setIsAuthenticated(false);
     console.log("Logout");
-    // Aqui você pode redirecionar ou limpar o auth token
   };
 
   return (
-    <div className={styles.container}>
-      <Header
-        onToggleSidebar={handleToggleSidebar}
-        onLogout={handleLogout}
-        logoSrc="/logoeniwhere.svg"
-      />
+    <Router>
+      <div className={styles.container}>
+        {isAuthenticated && (
+          <>
+            <Header
+              onToggleSidebar={handleToggleSidebar}
+              onLogout={handleLogout}
+              logoSrc="/logoeniwhere.svg"
+            />
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          </>
+        )}
 
-      {/* Sidebar sempre renderizada, só anima a entrada/saída */}
-    <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-
-      <div className={styles.body}>
-        <main className={styles.main}>
-          {/* Conteúdo principal aqui */}
-          <h1>Bem-vindo ao sistema</h1>
-        </main>
+        <div className={styles.body}>
+          <main className={styles.main}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  isAuthenticated ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />
+                }
+              />
+              <Route
+                path="/home"
+                element={
+                  isAuthenticated ? <HomePage /> : <Navigate to="/" />
+                }
+              />
+            </Routes>
+          </main>
+        </div>
       </div>
-    </div>
+    </Router>
   );
 }
 
