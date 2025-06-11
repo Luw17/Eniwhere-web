@@ -17,51 +17,52 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     try {
       const response = await fetch("http://localhost:3001/eniwhere/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username:username, userPassword:password }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username, userPassword: password }),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (result.id) {
-    setUserId(result.id);
-     setShow2FAModal(true);
-     } else if (result.success) {
-      onLogin(); 
-     } else {
-      alert("Credenciais inválidas.");
-    }
+      if (result.id) {
+        setUserId(result.id);
+        setShow2FAModal(true);
+      } else if (result.success) {
+        onLogin();
+      } else {
+        alert("Credenciais inválidas.");
+      }
     } catch (error) {
       console.error("Erro ao conectar à API:", error);
-       alert("Erro na conexão com o servidor.");
+      alert("Erro na conexão com o servidor.");
     }
   };
 
   const handle2FAVerification = async () => {
-     try {
-       const response = await fetch("http://localhost:3001/eniwhere/verify-2fa", {
-       method: "POST",
-        headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ userId, code: twoFACode }),
-       });
+    try {
+      const response = await fetch(
+        "http://localhost:3001/eniwhere/verify-2fa",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, code: twoFACode }),
+        }
+      );
 
-       const result = await response.text();
+      const result = await response.text();
 
-        if (result.startsWith("Bearer ")) {
-      
-      localStorage.setItem("authToken", result);
+      if (result.startsWith("Bearer ")) {
+        localStorage.setItem("authToken", result);
 
-      setShow2FAModal(false);
-      onLogin();
-       } else {
+        setShow2FAModal(false);
+        onLogin();
+      } else {
         alert("Código 2FA inválido.");
-       }
-     } catch (error) {
-       console.error("Erro na verificação 2FA:", error);
-       alert("Erro ao verificar o código 2FA.");
-     }
-
+      }
+    } catch (error) {
+      console.error("Erro na verificação 2FA:", error);
+      alert("Erro ao verificar o código 2FA.");
+    }
   };
 
   return (
