@@ -6,65 +6,62 @@ type LoginPageProps = {
 };
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
+  const [username, setusername] = useState("");
   const [password, setPassword] = useState("");
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Desativado temporariamente: não está validando email/senha no backend
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // try {
-    //   const response = await fetch("http://localhost:3000/api/login", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ email, password }),
-    //   });
+    try {
+      const response = await fetch("http://localhost:3001/eniwhere/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username:username, userPassword:password }),
+    });
 
-    //   const result = await response.json();
+    const result = await response.json();
 
-    //   if (result.require2FA) {
-    //     setShow2FAModal(true); // mostrar o modal de 2FA
-    //   } else if (result.success) {
-    //     onLogin(); // login normal
-    //   } else {
-    //     alert("Credenciais inválidas.");
-    //   }
-    // } catch (error) {
-    //   console.error("Erro ao conectar à API:", error);
-    //   alert("Erro na conexão com o servidor.");
-    // }
-
-    // Mostra o modal de 2FA diretamente (modo de teste)
-    setShow2FAModal(true);
+    if (result.id) {
+    setUserId(result.id);
+     setShow2FAModal(true);
+     } else if (result.success) {
+      onLogin(); 
+     } else {
+      alert("Credenciais inválidas.");
+    }
+    } catch (error) {
+      console.error("Erro ao conectar à API:", error);
+       alert("Erro na conexão com o servidor.");
+    }
   };
 
-  // Desativado temporariamente: simulação da verificação 2FA
   const handle2FAVerification = async () => {
-    // try {
-    //   const response = await fetch("http://localhost:3000/api/verify-2fa", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ email, code: twoFACode }),
-    //   });
+     try {
+       const response = await fetch("http://localhost:3001/eniwhere/verify-2fa", {
+       method: "POST",
+        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ userId, code: twoFACode }),
+       });
 
-    //   const result = await response.json();
+       const result = await response.text();
 
-    //   if (result.success) {
-    //     setShow2FAModal(false);
-    //     onLogin();
-    //   } else {
-    //     alert("Código 2FA inválido.");
-    //   }
-    // } catch (error) {
-    //   console.error("Erro na verificação 2FA:", error);
-    //   alert("Erro ao verificar o código 2FA.");
-    // }
+        if (result.startsWith("Bearer ")) {
+      
+      localStorage.setItem("authToken", result);
 
-    // Apenas fecha o modal e simula login (modo de teste)
-    setShow2FAModal(false);
-    onLogin();
+      setShow2FAModal(false);
+      onLogin();
+       } else {
+        alert("Código 2FA inválido.");
+       }
+     } catch (error) {
+       console.error("Erro na verificação 2FA:", error);
+       alert("Erro ao verificar o código 2FA.");
+     }
+
   };
 
   return (
@@ -73,12 +70,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <span className={styles.header}>BEM VINDO(A)!</span>
         <form onSubmit={handleLogin}>
           <div className={styles["input-group"]}>
-            <label>Email</label>
+            <label>Username</label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setusername(e.target.value)}
             />
           </div>
 
