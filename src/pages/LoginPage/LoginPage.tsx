@@ -71,7 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <span className={styles.header}>BEM VINDO(A)!</span>
         <form onSubmit={handleLogin}>
           <div className={styles["input-group"]}>
-            <label>Username</label>
+            <label>Usuário</label>
             <input
               type="text"
               required
