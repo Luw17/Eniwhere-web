@@ -6,6 +6,7 @@ import Sidebar from "./components/Sidebar/Sidebar";
 import styles from "./App.module.css";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
+import AnalyticsPage from "./pages/AnalyticsPage/AnalyticsPage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,6 +54,8 @@ function App() {
                   isAuthenticated ? <HomePage /> : <Navigate to="/" />
                 }
               />
+
+              <Route path="/analytics" element={<AnalyticsPage />} />
             </Routes>
           </main>
         </div>

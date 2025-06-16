@@ -1,7 +1,7 @@
 /* Garante que a altura da tela seja herdada corretamente */
 html,
 body {
-  height: 100%;
+  height: fit-content;
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
