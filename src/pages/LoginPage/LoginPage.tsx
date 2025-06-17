@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
 
 type LoginPageProps = {
@@ -6,11 +6,45 @@ type LoginPageProps = {
 };
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [username, setusername] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isCheckingToken, setIsCheckingToken] = useState(true);
+
+  // Verifica token existente ao montar o componente
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        try {
+          const response = await fetch(
+            "http://localhost:3001/eniwhere/verify-token",
+            {
+              method: "GET",
+              headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.ok) {
+            onLogin(); // Token válido, prossegue para estado autenticado
+          } else {
+            localStorage.removeItem("authToken"); // Remove token inválido
+          }
+        } catch (error) {
+          console.error("Erro ao verificar token:", error);
+          localStorage.removeItem("authToken"); // Remove token em caso de erro
+        }
+      }
+      setIsCheckingToken(false); // Concluiu verificação do token
+    };
+
+    checkAuthToken();
+  }, [onLogin]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +53,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const response = await fetch("http://localhost:3001/eniwhere/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username, userPassword: password }),
+        body: JSON.stringify({ username, userPassword: password }),
       });
 
       const result = await response.json();
@@ -36,6 +70,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       console.error("Erro ao conectar à API:", error);
       alert("Erro na conexão com o servidor.");
     }
+
+    // Simulação temporária para testar sem backend
+    setUserId("simulated-user-id");
+    setShow2FAModal(true);
   };
 
   const handle2FAVerification = async () => {
@@ -53,7 +91,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
       if (result.startsWith("Bearer ")) {
         localStorage.setItem("authToken", result);
-
         setShow2FAModal(false);
         onLogin();
       } else {
@@ -63,7 +100,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       console.error("Erro na verificação 2FA:", error);
       alert("Erro ao verificar o código 2FA.");
     }
+
+    // Simulação temporária para testar sem backend
+    localStorage.setItem("authToken", "Bearer simulated-token");
+    setShow2FAModal(false);
+    onLogin();
   };
+
+  // Exibe estado de carregamento enquanto verifica token
+  if (isCheckingToken) {
+    return <div>Verificando autenticação...</div>;
+  }
 
   return (
     <div className={styles["login-background"]}>
@@ -76,7 +123,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               type="text"
               required
               value={username}
-              onChange={(e) => setusername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </div>
 
