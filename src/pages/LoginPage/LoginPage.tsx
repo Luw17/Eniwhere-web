@@ -49,6 +49,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const loginButton = document.querySelector("#login-button");
+    loginButton!.setAttribute("disabled", "");
+    
+
+
     try {
       const response = await fetch("http://localhost:3001/eniwhere/login", {
         method: "POST",
@@ -61,6 +66,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       if (result.id) {
         setUserId(result.id);
         setShow2FAModal(true);
+        loginButton!.removeAttribute("disabled");
       } else if (result.success) {
         onLogin();
       } else {
@@ -70,10 +76,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       console.error("Erro ao conectar à API:", error);
       alert("Erro na conexão com o servidor.");
     }
-
-    // Simulação temporária para testar sem backend
-    setUserId("simulated-user-id");
-    setShow2FAModal(true);
   };
 
   const handle2FAVerification = async () => {
@@ -100,11 +102,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       console.error("Erro na verificação 2FA:", error);
       alert("Erro ao verificar o código 2FA.");
     }
-
-    // Simulação temporária para testar sem backend
-    localStorage.setItem("authToken", "Bearer simulated-token");
-    setShow2FAModal(false);
-    onLogin();
   };
 
   // Exibe estado de carregamento enquanto verifica token
@@ -141,7 +138,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <a href="#">esqueci a senha</a>
           </div>
 
-          <button type="submit" className={styles.button}>
+          <button id="login-button" type="submit" className={styles.button}>
             Entrar
           </button>
 
