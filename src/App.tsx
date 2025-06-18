@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -12,6 +12,13 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    if (authToken) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+  
   const handleToggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
