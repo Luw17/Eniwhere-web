@@ -36,13 +36,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onClick={handleLogoClick} // Usando a função de navegação
       />
 
-      <button className={styles.createOrder}>Criar ordem</button>
+      <button
+        className={styles.createOrder}
+        onClick={() => navigate("/formulario")}
+      >
+        Criar ordem
+      </button>
 
       <nav className={styles.nav}>
         <a href="#">Histórico</a>
         <a href="#">Agenda</a>
         <a href="#">Configurações</a>
-        <a href="#" className={styles.assinatura}>Assinatura</a>
+        <a href="#" className={styles.assinatura}>
+          Assinatura
+        </a>
       </nav>
 
       <div className={styles.plusFunctions}>
