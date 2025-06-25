@@ -1,12 +1,18 @@
 // src/App.tsx
 import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import styles from "./App.module.css";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import AnalyticsPage from "./pages/AnalyticsPage/AnalyticsPage";
+import FormsPage from "./pages/FormsPage/FormsPage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,7 +24,7 @@ function App() {
       setIsAuthenticated(true);
     }
   }, []);
-  
+
   const handleToggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
@@ -42,7 +48,10 @@ function App() {
               onLogout={handleLogout}
               logoSrc="/logoeniwhere.svg"
             />
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <Sidebar
+              isOpen={isSidebarOpen}
+              onClose={() => setIsSidebarOpen(false)}
+            />
           </>
         )}
 
@@ -52,16 +61,21 @@ function App() {
               <Route
                 path="/"
                 element={
-                  isAuthenticated ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />
+                  isAuthenticated ? (
+                    <Navigate to="/home" />
+                  ) : (
+                    <LoginPage onLogin={handleLogin} />
+                  )
                 }
               />
               <Route
                 path="/home"
-                element={
-                  isAuthenticated ? <HomePage /> : <Navigate to="/" />
-                }
+                element={isAuthenticated ? <HomePage /> : <Navigate to="/" />}
               />
-
+              <Route
+                path="/formulario"
+                element={isAuthenticated ? <FormsPage /> : <Navigate to="/" />}
+              />
               <Route path="/analytics" element={<AnalyticsPage />} />
             </Routes>
           </main>
