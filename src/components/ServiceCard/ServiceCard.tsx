@@ -7,12 +7,13 @@ interface ServiceCardProps {
   date: string;
   id: string;
   status: string;
-  color: "yellow" | "red" | "blue";
+  color: "yellow" | "red" | "blue" | "green";
+  onClick?: () => void;  // novo prop opcional
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ name, device, date, id, status, color }) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({ name, device, date, id, status, color, onClick }) => {
   return (
-    <div className={styles.card}>
+    <div className={styles.card} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       <div className={styles.header}>
         <span>{name}</span>
       </div>
@@ -24,7 +25,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ name, device, date, id, statu
       </div>
       <button
         className={styles.status}
-        style={{ backgroundColor: color || '#fff176' }} // amarelo padrão
+        style={{ backgroundColor: color || '#fff176' }}
       >
         {status}
       </button>

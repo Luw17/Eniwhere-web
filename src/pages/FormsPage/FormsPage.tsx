@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsPage.module.css";
 
@@ -6,27 +6,40 @@ interface FormData {
   nome: string;
   tel: string;
   email: string;
-  aparelho: string;
+  aparelho: string; // agora armazena o ID (string)
   trampo: string;
   trampoOutro: string;
   imgs: File[];
   valor: string;
   prazo: string;
   garantia: string;
-  status: string;
+  status: string; // vai guardar "pending" ou "in_progress"
   obs: string;
+  document: string; // novo campo para documento
 }
 
-const statusKey: Record<string, string> = {
-  "Aguardando retirada": "aguardando",
-  "Em andamento": "andamento",
-  Concluído: "concluido",
-  Cancelado: "cancelado",
-};
+interface Device {
+  id: number;
+  deviceName: string;
+  model: string;
+  brand: string;
+  active: boolean;
+}
+
+const statusOptions = [
+  { label: "Pendente", value: "pending" },
+  { label: "Em andamento", value: "in_progress" },
+];
 
 export default function Formulario() {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [showDocumentModal, setShowDocumentModal] = useState(true);
+  const [documentInput, setDocumentInput] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [canProceed, setCanProceed] = useState(false);
+
   const [form, setForm] = useState<FormData>({
     nome: "",
     tel: "",
@@ -38,9 +51,32 @@ export default function Formulario() {
     valor: "",
     prazo: "",
     garantia: "",
-    status: "",
+    status: "", // inicia vazio, obrigatório no step 2
     obs: "",
+    document: "",
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.warn("Token não encontrado.");
+      return;
+    }
+
+    fetch("http://localhost:3001/eniwhere/devices", {
+      headers: {
+        Authorization: token,
+      },
+    })
+      .then((res) => res.json())
+      .then((data: Device[]) => {
+        const ativos = data.filter((d) => d.active);
+        setDevices(ativos);
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar dispositivos:", err);
+      });
+  }, []);
 
   const handle =
     (key: keyof FormData) =>
@@ -56,19 +92,98 @@ export default function Formulario() {
     setForm({ ...form, imgs: [...form.imgs, ...files] });
   };
 
-  const handleSubmit = async () => {
-    const formData = new FormData();
-    for (const key in form) {
-      if (key !== "imgs") {
-        formData.append(key, (form as any)[key]);
-      }
+  // Verifica documento via API
+  const verifyDocument = async () => {
+    if (!documentInput.trim()) {
+      alert("Digite o documento.");
+      return;
     }
-    form.imgs.forEach((file) => formData.append("imgs", file));
+
+    setIsVerifying(true);
 
     try {
-      const response = await fetch("http://localhost:3001/eniwhere/formulario", {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        alert("Token não encontrado. Faça login novamente.");
+        setIsVerifying(false);
+        return;
+      }
+
+      const res = await fetch(
+        `http://localhost:3001/eniwhere/user/verify/${encodeURIComponent(
+          documentInput
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Erro na verificação");
+
+      const json = await res.json();
+
+      if (json === true) {
+        setForm((prev) => ({ ...prev, document: documentInput }));
+        setCanProceed(true);
+        setShowDocumentModal(false);
+      } else {
+        alert("Documento não encontrado ou inválido.");
+        setCanProceed(false);
+      }
+    } catch (err) {
+      alert("Erro ao verificar documento.");
+      console.error(err);
+      setCanProceed(false);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Converte "trampo" texto para código numérico, exemplo simples:
+  const trampoParaNumero = (trampo: string): number => {
+    const map: Record<string, number> = {
+      "Troca de tela": 1,
+      "Troca de bateria": 2,
+      "Reparo de software": 3,
+      "Troca de conector de carga": 4,
+      "Troca/adição de película": 5,
+      "Outros…": 6,
+    };
+    return map[trampo] || 0;
+  };
+
+  const handleSubmit = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Token não encontrado. Faça login novamente.");
+      return;
+    }
+
+    const payload = {
+      workerId: 1, // ajuste conforme seu contexto
+      document: form.document,
+      deviceId: Number(form.aparelho),
+      userId: undefined, // backend resolve
+      work: trampoParaNumero(form.trampo),
+      problem: form.trampo === "Outros…" ? form.trampoOutro : form.trampo,
+      deadline: form.prazo,
+      cost: Number(form.valor),
+      status: form.status, // vai enviar "pending" ou "in_progress"
+      storeId: 1, // ajuste conforme seu contexto
+      userDeviceId: undefined, // backend resolve
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/eniwhere/order", {
         method: "POST",
-        body: formData,
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Erro ao enviar o formulário");
@@ -82,108 +197,291 @@ export default function Formulario() {
   };
 
   return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        {step === 1 ? (
-          <button onClick={() => navigate("/")} className={styles.smallBtn}>Sair</button>
-        ) : (
-          <button onClick={() => setStep(1)} className={styles.smallBtn}>Voltar</button>
-        )}
-
-        {step === 1 && (
-          <>
-            <h1 className={styles.title}>FORMULÁRIO</h1>
-            <h2 className={styles.section}>QUEM É O CLIENTE?</h2>
-            <div className={styles.row}>
-              <input className={styles.input} placeholder="Nome" value={form.nome} onChange={handle("nome")} />
-              <input className={styles.input} placeholder="Telefone" value={form.tel} onChange={handle("tel")} maxLength={14} />
+    <>
+      {/* Modal para documento */}
+      {showDocumentModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2>Informe o documento</h2>
+            <input
+              className={styles.input}
+              type="text"
+              placeholder="Documento"
+              value={documentInput}
+              onChange={(e) => setDocumentInput(e.target.value)}
+            />
+            <div
+              className={styles.actions}
+              style={{ justifyContent: "center", marginTop: 20 }}
+            >
+              <button
+                className={styles.primaryBtn}
+                onClick={verifyDocument}
+                disabled={isVerifying}
+              >
+                {isVerifying ? "Verificando..." : "Confirmar"}
+              </button>
             </div>
-            <input className={styles.input} placeholder="E-mail" value={form.email} onChange={handle("email")} />
-            <input className={styles.input} placeholder="Aparelho/marca" value={form.aparelho} onChange={handle("aparelho")} />
+          </div>
+        </div>
+      )}
 
-            <h2 className={styles.section}>QUAL O TRAMPO?</h2>
-            <div className={styles.row}>
-              <label className={styles.dropzone}>
-                {form.imgs.length > 0 ? (
-                  <div className={styles.thumbGrid}>
-                    {form.imgs.map((img, i) => (
-                      <img key={i} src={URL.createObjectURL(img)} className={styles.thumb} alt={`img-${i}`} />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <span className={styles.plus}>＋</span>
-                    <p>Adicione uma imagem do estado<br />do aparelho quando chegou à loja</p>
-                  </>
-                )}
-                <input type="file" accept="image/*" multiple hidden onChange={handleFileChange} />
-              </label>
+      <main
+        className={styles.page}
+        style={{
+          filter: showDocumentModal ? "blur(2px)" : "none",
+          pointerEvents: showDocumentModal ? "none" : "auto",
+        }}
+      >
+        <section className={styles.card}>
+          {step === 1 ? (
+            <button onClick={() => navigate("/")} className={styles.smallBtn}>
+              Sair
+            </button>
+          ) : (
+            <button onClick={() => setStep(1)} className={styles.smallBtn}>
+              Voltar
+            </button>
+          )}
 
-              <ul className={styles.radioGroup}>
-                {["Troca de tela", "Troca de bateria", "Reparo de software", "Troca de conector de carga", "Troca/adição de película", "Outros…"].map((txt) => (
-                  <li key={txt}>
-                    <label className={styles.radio}>
-                      <input type="radio" name="job" checked={form.trampo === txt} onChange={() => setForm({ ...form, trampo: txt })} />
-                      <span>{txt}</span>
-                    </label>
-                  </li>
+          {step === 1 && (
+            <>
+              <h1 className={styles.title}>FORMULÁRIO</h1>
+              <h2 className={styles.section}>QUEM É O CLIENTE?</h2>
+              <div className={styles.row}>
+                <input
+                  className={styles.input}
+                  placeholder="Nome"
+                  value={form.nome}
+                  onChange={handle("nome")}
+                />
+                <input
+                  className={styles.input}
+                  placeholder="Telefone"
+                  value={form.tel}
+                  onChange={handle("tel")}
+                  maxLength={14}
+                />
+              </div>
+              <input
+                className={styles.input}
+                placeholder="E-mail"
+                value={form.email}
+                onChange={handle("email")}
+              />
+
+              {/* Select de dispositivos */}
+              <select
+                className={styles.select}
+                value={form.aparelho}
+                onChange={(e) => setForm({ ...form, aparelho: e.target.value })}
+              >
+                <option value="">Selecione um dispositivo</option>
+                {devices.map((d) => (
+                  <option key={d.id} value={d.id.toString()}>
+                    {d.deviceName} - {d.brand} - {d.model}
+                  </option>
                 ))}
-              </ul>
-            </div>
-            {form.trampo === "Outros…" && (
-              <input className={styles.input} placeholder="Descreva o serviço" value={form.trampoOutro} onChange={handle("trampoOutro")} />
-            )}
-            <div className={styles.actions}>
-              <button type="reset" className={styles.cleanBtn} onClick={() => setForm({ ...form, nome: "", tel: "", email: "", aparelho: "", trampo: "", trampoOutro: "", imgs: [] })}>Limpar</button>
-              <button onClick={() => setStep(2)} className={styles.primaryBtn} disabled={!form.nome || !form.tel || !form.trampo}>Próximo</button>
-            </div>
-          </>
-        )}
+              </select>
 
-        {step === 2 && (
-          <>
-            <h1 className={styles.title}>QUASE LÁ…</h1>
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <input className={styles.input} placeholder="Valor" value={form.valor} onChange={handle("valor")} />
-                <input className={styles.input} placeholder="Prazo" value={form.prazo} onChange={handle("prazo")} />
-              </div>
-              <div className={styles.col}>
-                <ul className={styles.clientInfo}>
-                  <li><strong>Nome:</strong> {form.nome}</li>
-                  <li><strong>Email:</strong> {form.email}</li>
-                  <li><strong>Tel:</strong> {form.tel}</li>
-                </ul>
-                <input className={`${styles.input} ${styles.garante}`} placeholder="Garantia" value={form.garantia} onChange={handle("garantia")} />
-              </div>
-            </div>
-
-            <h2 className={`${styles.section} ${styles.statusHeader}`}>STATUS</h2>
-            <div className={styles.statusRow}>
-              {Object.keys(statusKey).map((label) => (
-                <label key={label} className={`${styles.status} ${styles[statusKey[label]]} ${form.status === label ? styles.statusSelected : ""}`}>
-                  <input type="radio" name="status" checked={form.status === label} onChange={() => setForm({ ...form, status: label })} />
-                  {label}
+              <h2 className={styles.section}>QUAL O TRAMPO?</h2>
+              <div className={styles.row}>
+                <label className={styles.dropzone}>
+                  {form.imgs.length > 0 ? (
+                    <div className={styles.thumbGrid}>
+                      {form.imgs.map((img, i) => (
+                        <img
+                          key={i}
+                          src={URL.createObjectURL(img)}
+                          className={styles.thumb}
+                          alt={`img-${i}`}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <span className={styles.plus}>＋</span>
+                      <p>
+                        Adicione uma imagem do estado
+                        <br />
+                        do aparelho quando chegou à loja
+                      </p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={handleFileChange}
+                  />
                 </label>
-              ))}
-            </div>
 
-            <details className={styles.obsContainer}>
-              <summary className={styles.obsHeader}>Observações?</summary>
-              <textarea rows={6} placeholder="Insira aqui observações e pontos a destacar neste pedido" className={styles.textarea} value={form.obs} onChange={handle("obs")} />
-            </details>
+                <ul className={styles.radioGroup}>
+                  {[
+                    "Troca de tela",
+                    "Troca de bateria",
+                    "Reparo de software",
+                    "Troca de conector de carga",
+                    "Troca/adição de película",
+                    "Outros…",
+                  ].map((txt) => (
+                    <li key={txt}>
+                      <label className={styles.radio}>
+                        <input
+                          type="radio"
+                          name="job"
+                          checked={form.trampo === txt}
+                          onChange={() => setForm({ ...form, trampo: txt })}
+                        />
+                        <span>{txt}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {form.trampo === "Outros…" && (
+                <input
+                  className={styles.input}
+                  placeholder="Descreva o serviço"
+                  value={form.trampoOutro}
+                  onChange={handle("trampoOutro")}
+                />
+              )}
+              <div className={styles.actions}>
+                <button
+                  type="reset"
+                  className={styles.cleanBtn}
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      nome: "",
+                      tel: "",
+                      email: "",
+                      aparelho: "",
+                      trampo: "",
+                      trampoOutro: "",
+                      imgs: [],
+                      document: "",
+                    })
+                  }
+                >
+                  Limpar
+                </button>
+                <button
+                  onClick={() => setStep(2)}
+                  className={styles.primaryBtn}
+                  disabled={
+                    !form.nome ||
+                    !form.tel ||
+                    !form.trampo ||
+                    !form.aparelho ||
+                    !form.document
+                  }
+                >
+                  Próximo
+                </button>
+              </div>
+            </>
+          )}
 
-            <p className={styles.note}>
-              Valor, prazo, status e garantia podem ser atualizados no futuro
-            </p>
+          {step === 2 && (
+            <>
+              <h1 className={styles.title}>QUASE LÁ…</h1>
+              <div className={styles.row}>
+                <div className={styles.col}>
+                  <input
+                    className={styles.input}
+                    placeholder="Valor"
+                    value={form.valor}
+                    onChange={handle("valor")}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder="Prazo"
+                    value={form.prazo}
+                    onChange={handle("prazo")}
+                  />
+                </div>
+                <div className={styles.col}>
+                  <ul className={styles.clientInfo}>
+                    <li>
+                      <strong>Nome:</strong> {form.nome}
+                    </li>
+                    <li>
+                      <strong>Email:</strong> {form.email}
+                    </li>
+                    <li>
+                      <strong>Tel:</strong> {form.tel}
+                    </li>
+                  </ul>
+                  <input
+                    className={`${styles.input} ${styles.garante}`}
+                    placeholder="Garantia"
+                    value={form.garantia}
+                    onChange={handle("garantia")}
+                  />
+                </div>
+              </div>
 
-            <div className={styles.actions}>
-              <button type="button" className={styles.cleanBtn} onClick={() => setStep(1)}>Voltar</button>
-              <button onClick={handleSubmit} className={styles.primaryBtn} disabled={!form.status}>Finalizar</button>
-            </div>
-          </>
-        )}
-      </section>
-    </main>
+              <h2 className={`${styles.section} ${styles.statusHeader}`}>
+                STATUS
+              </h2>
+              <div className={styles.statusRow}>
+                {statusOptions.map(({ label, value }) => (
+                  <label
+                    key={value}
+                    className={`${styles.status} ${
+                      form.status === value ? styles.statusSelected : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="status"
+                      value={value}
+                      checked={form.status === value}
+                      onChange={() => setForm({ ...form, status: value })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              <details className={styles.obsContainer}>
+                <summary className={styles.obsHeader}>Observações?</summary>
+                <textarea
+                  rows={6}
+                  placeholder="Insira aqui observações e pontos a destacar neste pedido"
+                  className={styles.textarea}
+                  value={form.obs}
+                  onChange={handle("obs")}
+                />
+              </details>
+
+              <p className={styles.note}>
+                Valor, prazo, status e garantia podem ser atualizados no futuro
+              </p>
+
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={styles.cleanBtn}
+                  onClick={() => setStep(1)}
+                >
+                  Voltar
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className={styles.primaryBtn}
+                  disabled={!form.status}
+                >
+                  Finalizar
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+    </>
   );
 }

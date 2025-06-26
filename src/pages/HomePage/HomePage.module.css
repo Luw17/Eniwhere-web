@@ -14,3 +14,128 @@
   gap: 2rem;
   overflow-y: auto;
 }
+
+/* src/pages/HomePage/HomePage.module.css */
+
+:root {
+  --bg-card: #ffffff;
+  --blue-pill: #9ec4ff;
+  --line-blue: #5c9dff;
+  --txt-dark: #010203;
+  --txt-muted: #666;
+}
+
+.container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to bottom, #f4f9ff, #d1e4ff);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  padding: 40px 20px;
+  flex-direction: column;
+  gap: 40px;
+  overflow-y: auto;
+}
+
+/* ---------- Seções ---------- */
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--txt-dark);
+}
+
+/* ---------- Botões de paginação ---------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pageBtn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 9999px;
+  background: #001119;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.pageBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+/* ---------- Cards de Serviço ---------- */
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  width: 160px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.cardHeader {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: var(--txt-dark);
+  background-color: var(--blue-pill);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.cardInfo {
+  font-size: 0.8rem;
+  color: var(--txt-muted);
+  margin-bottom: 6px;
+}
+
+.cardStatus {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.statusBlue {
+  background-color: #0057ff;
+  color: #fff;
+}
+
+.statusYellow {
+  background-color: #ffeb3b;
+  color: #000;
+}
+
+.statusGreen {
+  background-color: #3adb76;
+  color: #fff;
+}
+
+.statusRed {
+  background-color: #ff6b6b;
+  color: #fff;
+}

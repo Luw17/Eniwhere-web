@@ -10,9 +10,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [userId setUserId] = useState<number | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+
+    
 
   useEffect(() => {
     const checkAuthToken = async () => {
@@ -44,9 +47,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     checkAuthToken();
   }, [onLogin]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+
+const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
-  setIsLoading(true); // Ativa loading
+  setIsLoggingIn(true);
+
 
   try {
     const response = await fetch("http://localhost:3001/eniwhere/login", {
@@ -69,33 +74,43 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     console.error("Erro ao conectar à API:", error);
     alert("Erro na conexão com o servidor.");
   } finally {
-    setIsLoading(false); // Finaliza loading
+    setIsLoggingIn(false);
   }
 };
 
 
-  const handle2FAVerification = async () => {
-    try {
-      const response = await fetch("http://localhost:3001/eniwhere/verify-2fa", {
+const handle2FAVerification = async () => {
+  if (!userId) return;
+  setIsVerifying2FA(true);
+
+  try {
+    const response = await fetch(
+      "http://localhost:3001/eniwhere/verify-2fa",
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, code: twoFACode }),
-      });
-
-      const result = await response.text();
-
-      if (result.startsWith("Bearer ")) {
-        localStorage.setItem("authToken", result);
-        setShow2FAModal(false);
-        onLogin();
-      } else {
-        alert("Código 2FA inválido.");
       }
-    } catch (error) {
-      console.error("Erro na verificação 2FA:", error);
-      alert("Erro ao verificar o código 2FA.");
+    );
+
+    const result = await response.text();
+
+    if (result.startsWith("Bearer ")) {
+      localStorage.setItem("authToken", result);
+      setShow2FAModal(false);
+      onLogin();
+    } else {
+      alert("Código 2FA inválido.");
     }
-  };
+  } catch (error) {
+    console.error("Erro na verificação 2FA:", error);
+    alert("Erro ao verificar o código 2FA.");
+  } finally {
+    setIsVerifying2FA(false);
+  }
+};
+
+
 
   if (isCheckingToken) {
     return <div>Verificando autenticação...</div>;
@@ -131,14 +146,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <a href="#">esqueci a senha</a>
           </div>
 
-   <button
-  id="login-button"
-  type="submit"
-  className={styles.button}
-  disabled={isLoading}
->
-  {isLoading ? "Entrando..." : "Entrar"}
-</button>
+          <button
+            id="login-button"
+            type="submit"
+            className={styles.button}
+            disabled={isLoggingIn}
+          >
+            {isLoggingIn ? "Entrando..." : "Entrar"}
+          </button>
+
 
           <div className={styles["signup-text"]}>
             não possui conta? <a href="#">cadastre-se</a>
@@ -168,9 +184,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <button
               onClick={handle2FAVerification}
               className={styles["modal-button"]}
+              disabled={isVerifying2FA}
             >
-              Verificar
+              {isVerifying2FA ? "Verificando..." : "Verificar"}
             </button>
+
           </div>
         </div>
       )}
