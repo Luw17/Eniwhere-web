@@ -24,7 +24,6 @@ type ServiceOrder = {
       model: string;
     };
   };
-  // Adicione aqui os campos completos que quiser no modal:
   completed_at?: string | null;
   feedback?: number | null;
   warranty?: string | null;
@@ -38,8 +37,12 @@ export default function HomePage() {
   const [pendingServices, setPendingServices] = useState<Service[]>([]);
   const [recentServices, setRecentServices] = useState<Service[]>([]);
 
-  const [pendingServicesFull, setPendingServicesFull] = useState<ServiceOrder[]>([]);
-  const [recentServicesFull, setRecentServicesFull] = useState<ServiceOrder[]>([]);
+  const [pendingServicesFull, setPendingServicesFull] = useState<
+    ServiceOrder[]
+  >([]);
+  const [recentServicesFull, setRecentServicesFull] = useState<ServiceOrder[]>(
+    []
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
@@ -51,16 +54,16 @@ export default function HomePage() {
 
       let color: Service["color"];
       switch (order.status) {
-        case "in_progress":
+        case "andamento":
           color = "yellow";
           break;
-        case "pending":
+        case "aguardando":
           color = "blue";
           break;
-        case "completed":
+        case "concluido":
           color = "green";
           break;
-        case "cancelled":
+        case "cancelado":
           color = "red";
           break;
         default:
@@ -78,10 +81,8 @@ export default function HomePage() {
     });
   };
 
-  // Quando clicar no card, busca o objeto completo pelo id para abrir modal
   function handleCardClick(service: Service) {
     const idNum = Number(service.id);
-    // procura nas pendentes e recentes
     const fullOrder =
       pendingServicesFull.find((o) => o.id === idNum) ||
       recentServicesFull.find((o) => o.id === idNum);
@@ -103,16 +104,22 @@ export default function HomePage() {
 
     const fetchRecentOrders = async () => {
       try {
-        const response = await fetch("http://localhost:3001/eniwhere/order/store", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
-        });
+        const response = await fetch(
+          "http://localhost:3001/eniwhere/order/store",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+          }
+        );
 
         if (!response.ok) {
-          console.error("Erro na resposta da API (recentes):", response.statusText);
+          console.error(
+            "Erro na resposta da API (recentes):",
+            response.statusText
+          );
           return;
         }
 
@@ -126,17 +133,23 @@ export default function HomePage() {
 
     const fetchPendingOrders = async () => {
       try {
-        const response = await fetch("http://localhost:3001/eniwhere/order/storeNstatus", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
-          body: JSON.stringify({ status: "pending" }),
-        });
+        const response = await fetch(
+          "http://localhost:3001/eniwhere/order/storeNstatus",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+            body: JSON.stringify({ status: "pending" }),
+          }
+        );
 
         if (!response.ok) {
-          console.error("Erro na resposta da API (pendentes):", response.statusText);
+          console.error(
+            "Erro na resposta da API (pendentes):",
+            response.statusText
+          );
           return;
         }
 
@@ -174,17 +187,45 @@ export default function HomePage() {
       {modalOpen && selectedOrder && (
         <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
           <h2>Ordem #{selectedOrder.id}</h2>
-          <p><strong>Status:</strong> {selectedOrder.status}</p>
-          <p><strong>Cliente:</strong> {selectedOrder.userDevice?.user?.name ?? "Usuário desconhecido"}</p>
-          <p><strong>Dispositivo:</strong> {selectedOrder.userDevice?.device?.model ?? "Desconhecido"}</p>
-          <p><strong>Data criação:</strong> {new Date(selectedOrder.created_at).toLocaleDateString("pt-BR")}</p>
-          <p><strong>Data conclusão:</strong> {selectedOrder.completed_at ? new Date(selectedOrder.completed_at).toLocaleDateString("pt-BR") : "—"}</p>
-          <p><strong>Custo:</strong> {selectedOrder.cost ?? "—"}</p>
-          <p><strong>Trabalho:</strong> {selectedOrder.work ?? "—"}</p>
-          <p><strong>Garantia:</strong> {selectedOrder.warranty ?? "—"}</p>
-          <p><strong>Feedback:</strong> {selectedOrder.feedback ?? "—"}</p>
-          <p><strong>Prazo:</strong> {selectedOrder.deadline ?? "—"}</p>
-          <p><strong>Problema:</strong> {selectedOrder.problem ?? "—"}</p>
+          <p>
+            <strong>Status:</strong> {selectedOrder.status}
+          </p>
+          <p>
+            <strong>Cliente:</strong>{" "}
+            {selectedOrder.userDevice?.user?.name ?? "Usuário desconhecido"}
+          </p>
+          <p>
+            <strong>Dispositivo:</strong>{" "}
+            {selectedOrder.userDevice?.device?.model ?? "Desconhecido"}
+          </p>
+          <p>
+            <strong>Data criação:</strong>{" "}
+            {new Date(selectedOrder.created_at).toLocaleDateString("pt-BR")}
+          </p>
+          <p>
+            <strong>Data conclusão:</strong>{" "}
+            {selectedOrder.completed_at
+              ? new Date(selectedOrder.completed_at).toLocaleDateString("pt-BR")
+              : "—"}
+          </p>
+          <p>
+            <strong>Custo:</strong> {selectedOrder.cost ?? "—"}
+          </p>
+          <p>
+            <strong>Trabalho:</strong> {selectedOrder.work ?? "—"}
+          </p>
+          <p>
+            <strong>Garantia:</strong> {selectedOrder.warranty ?? "—"}
+          </p>
+          <p>
+            <strong>Feedback:</strong> {selectedOrder.feedback ?? "—"}
+          </p>
+          <p>
+            <strong>Prazo:</strong> {selectedOrder.deadline ?? "—"}
+          </p>
+          <p>
+            <strong>Problema:</strong> {selectedOrder.problem ?? "—"}
+          </p>
         </Modal>
       )}
     </div>
