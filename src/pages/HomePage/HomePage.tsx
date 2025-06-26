@@ -54,16 +54,16 @@ export default function HomePage() {
 
       let color: Service["color"];
       switch (order.status) {
-        case "andamento":
+        case "in_progress":
           color = "yellow";
           break;
-        case "aguardando":
+        case "pending":
           color = "blue";
           break;
-        case "concluido":
+        case "completed":
           color = "green";
           break;
-        case "cancelado":
+        case "cancelled":
           color = "red";
           break;
         default:
@@ -172,14 +172,14 @@ export default function HomePage() {
           title="Serviços pendentes"
           link="Ver mais"
           data={pendingServices}
-          pageSize={10}
+          pageSize={9}
           onCardClick={handleCardClick}
         />
         <Section
           title="Criadas recentemente"
           link="Ver todos"
           data={recentServices}
-          pageSize={10}
+          pageSize={9}
           onCardClick={handleCardClick}
         />
       </main>

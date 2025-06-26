@@ -41,6 +41,7 @@
   overflow-x: auto;
   padding: 1rem;
   scroll-snap-type: x mandatory;
+  justify-self: center;
 }
 
 .cardList::-webkit-scrollbar {

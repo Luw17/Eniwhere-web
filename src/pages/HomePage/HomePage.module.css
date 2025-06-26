@@ -76,7 +76,6 @@
 .pageBtn:hover:not(:disabled) {
   filter: brightness(1.1);
 }
-
 /* ---------- Cards de Serviço ---------- */
 .card {
   background: var(--bg-card);
