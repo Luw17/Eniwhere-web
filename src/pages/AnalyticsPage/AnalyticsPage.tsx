@@ -1,7 +1,7 @@
 import KpiCard from "../../components/KpiCard/KpiCard";
 import styles from "./AnalyticsPage.module.css";
 
-type KpiType = "line" | "bar" | "pie";
+type KpiType = "line" | "bar" | "pie" | "gauge";
 
 interface DataPoint {
   name: string;
@@ -85,6 +85,13 @@ const kpis: Kpi[] = [
       { name: "Insatisfeitos", value: 7 },
     ],
   },
+  {
+  title: "Taxa de Conversão",
+  value: "47",
+  type: "gauge",
+  color: "#7C83FD",
+  data: [], // não será usado, mas pode deixar vazio
+},
 ];
 
 export default function AnalyticsPage() {

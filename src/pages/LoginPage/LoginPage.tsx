@@ -1,4 +1,4 @@
-import React, { useState /*, useEffect*/ } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
 
 type LoginPageProps = {
@@ -10,30 +10,25 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
-
-  /* ------------------------------------------------------------------
-   * VERIFICAÇÃO AUTOMÁTICA DO TOKEN  ➜  Comentada para testes locais
-   * ------------------------------------------------------------------
+  const [userId, setUserId] = useState<number | null>(null);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const checkAuthToken = async () => {
       const token = localStorage.getItem("authToken");
       if (token) {
         try {
-          const response = await fetch(
-            "http://localhost:3001/eniwhere/verify-token",
-            {
-              method: "GET",
-              headers: {
-                Authorization: token,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const response = await fetch("http://localhost:3001/eniwhere/verify-token", {
+            method: "GET",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          });
 
           if (response.ok) {
-            onLogin();      // Token válido: pula login
+            onLogin(); // Token válido: pula login
             return;
           } else {
             localStorage.removeItem("authToken");
@@ -48,55 +43,44 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     checkAuthToken();
   }, [onLogin]);
-  ------------------------------------------------------------------*/
 
-  // ------------------------------------------------------------------
-  // LOGIN – verificação de credenciais desativada
-  // ------------------------------------------------------------------
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  setIsLoading(true); // Ativa loading
 
-    /* -------------- VERIFICAÇÃO REAL (comentada)
+  try {
+    const response = await fetch("http://localhost:3001/eniwhere/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, userPassword: password }),
+    });
+
+    const result = await response.json();
+
+    if (result.id) {
+      setUserId(result.id);
+      setShow2FAModal(true);
+    } else if (result.success) {
+      onLogin();
+    } else {
+      alert("Credenciais inválidas.");
+    }
+  } catch (error) {
+    console.error("Erro ao conectar à API:", error);
+    alert("Erro na conexão com o servidor.");
+  } finally {
+    setIsLoading(false); // Finaliza loading
+  }
+};
+
+
+  const handle2FAVerification = async () => {
     try {
-      const response = await fetch("http://localhost:3001/eniwhere/login", {
+      const response = await fetch("http://localhost:3001/eniwhere/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, userPassword: password }),
+        body: JSON.stringify({ userId, code: twoFACode }),
       });
-
-      const result = await response.json();
-
-      if (result.id) {
-        setShow2FAModal(true);
-      } else if (result.success) {
-        onLogin();
-      } else {
-        alert("Credenciais inválidas.");
-      }
-    } catch (error) {
-      console.error("Erro ao conectar à API:", error);
-      alert("Erro na conexão com o servidor.");
-    }
-    ---------------------------------------------------------------*/
-
-    // Bypass para testes locais
-    onLogin();
-  };
-
-  // ------------------------------------------------------------------
-  // 2FA – verificação desativada
-  // ------------------------------------------------------------------
-  const handle2FAVerification = async () => {
-    /* -------------- VERIFICAÇÃO REAL (comentada)
-    try {
-      const response = await fetch(
-        "http://localhost:3001/eniwhere/verify-2fa",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, code: twoFACode }),
-        }
-      );
 
       const result = await response.text();
 
@@ -111,18 +95,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       console.error("Erro na verificação 2FA:", error);
       alert("Erro ao verificar o código 2FA.");
     }
-    ---------------------------------------------------------------*/
-
-    // Bypass: fecha modal e loga
-    setShow2FAModal(false);
-    onLogin();
   };
 
-  /* Exibe estado de carregamento (não é mais necessário sem o token check)
   if (isCheckingToken) {
     return <div>Verificando autenticação...</div>;
   }
-  */
 
   return (
     <div className={styles["login-background"]}>
@@ -154,9 +131,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <a href="#">esqueci a senha</a>
           </div>
 
-          <button id="login-button" type="submit" className={styles.button}>
-            Entrar
-          </button>
+   <button
+  id="login-button"
+  type="submit"
+  className={styles.button}
+  disabled={isLoading}
+>
+  {isLoading ? "Entrando..." : "Entrar"}
+</button>
 
           <div className={styles["signup-text"]}>
             não possui conta? <a href="#">cadastre-se</a>
@@ -164,7 +146,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </form>
       </div>
 
-      {/* Modal 2FA (mantido para visual) */}
       {show2FAModal && (
         <div className={styles["modal-overlay"]}>
           <div className={styles["modal-box"]}>
