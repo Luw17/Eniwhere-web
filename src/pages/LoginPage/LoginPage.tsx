@@ -11,27 +11,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [userId setUserId] = useState<number | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
 
-
+    
 
   useEffect(() => {
     const checkAuthToken = async () => {
       const token = localStorage.getItem("authToken");
       if (token) {
         try {
-          const response = await fetch(
-            "http://localhost:3001/eniwhere/verify-token",
-            {
-              method: "GET",
-              headers: {
-                Authorization: token,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const response = await fetch("http://localhost:3001/eniwhere/verify-token", {
+            method: "GET",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          });
 
           if (response.ok) {
             onLogin(); // Token válido: pula login
@@ -50,9 +47,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     checkAuthToken();
   }, [onLogin]);
 
+
 const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsLoggingIn(true);
+
 
   try {
     const response = await fetch("http://localhost:3001/eniwhere/login", {
@@ -110,6 +109,7 @@ const handle2FAVerification = async () => {
     setIsVerifying2FA(false);
   }
 };
+
 
 
   if (isCheckingToken) {

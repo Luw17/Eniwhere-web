@@ -18,7 +18,7 @@ interface DataPoint {
 interface KpiCardProps {
   title: string;
   value: string;
-  type: "line" | "bar" | "pie";
+type: "line" | "bar" | "pie" | "gauge";
   data: DataPoint[];
   color?: string;
 }
@@ -82,6 +82,40 @@ export default function KpiCard({ title, value, type, data, color = "#8884d8" }:
     </div>
   </div>
 )}
+
+{type === "gauge" && (
+  <div className={styles.pieWrapper}>
+    <ResponsiveContainer width="100%" height={180}>
+      <PieChart>
+        <Pie
+          data={[
+            { name: "Taxa", value: parseFloat(value) },
+            { name: "Restante", value: 100 - parseFloat(value) }
+          ]}
+          cx="50%"
+          cy="100%"
+          startAngle={180}
+          endAngle={0}
+          innerRadius={60}
+          outerRadius={80}
+          paddingAngle={5}
+          dataKey="value"
+        >
+          <Cell fill={color} />
+          <Cell fill="#f0f0f0" />
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </ResponsiveContainer>
+    <div className={styles.centerOverlay}>
+      <h2 className={styles.value}>{value}%</h2>
+    </div>
+  </div>
+)}
+
+
+
+
         </div>
       </div>
     </div>
