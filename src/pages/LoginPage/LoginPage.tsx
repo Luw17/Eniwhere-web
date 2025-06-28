@@ -52,7 +52,6 @@ const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsLoggingIn(true);
 
-
   try {
     const response = await fetch("http://localhost:3001/eniwhere/login", {
       method: "POST",
@@ -62,11 +61,14 @@ const handleLogin = async (e: React.FormEvent) => {
 
     const result = await response.json();
 
+    if (result.role !== "store") {
+      alert("Apenas usuários com permissão de loja podem acessar.");
+      return;
+    }
+
     if (result.id) {
       setUserId(result.id);
       setShow2FAModal(true);
-    } else if (result.success) {
-      onLogin();
     } else {
       alert("Credenciais inválidas.");
     }
@@ -77,6 +79,7 @@ const handleLogin = async (e: React.FormEvent) => {
     setIsLoggingIn(false);
   }
 };
+
 
 
 const handle2FAVerification = async () => {
