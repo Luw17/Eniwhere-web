@@ -61,16 +61,17 @@ const handleLogin = async (e: React.FormEvent) => {
 
     const result = await response.json();
 
-    if (result.role !== "store") {
+    if(!result.id){
+      alert("Usuário ou senha inválidos.");
+      return;
+    }
+    else if (result.role !== "store") {
       alert("Apenas usuários com permissão de loja podem acessar.");
       return;
     }
-
-    if (result.id) {
+    else{
       setUserId(result.id);
       setShow2FAModal(true);
-    } else {
-      alert("Credenciais inválidas.");
     }
   } catch (error) {
     console.error("Erro ao conectar à API:", error);

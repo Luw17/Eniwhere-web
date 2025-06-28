@@ -3,12 +3,13 @@ import ServiceCard from "../ServiceCard/ServiceCard";
 import styles from "./Section.module.css";
 
 interface Service {
+  id: string;
   name: string;
   device: string;
   date: string;
-  id: string;
   status: string;
   color: "yellow" | "red" | "blue" | "green";
+  imageUrl?: string;  // adicionado para imagem opcional
 }
 
 interface SectionProps {
@@ -29,12 +30,12 @@ export default function Section({ title, link, data, pageSize = 10, onCardClick 
   const currentItems = data.slice(startIndex, startIndex + pageSize);
 
   const changePage = (newPage: number) => {
-    setFade(false); // inicia fade out
+    setFade(false);
 
     setTimeout(() => {
       setCurrentPage(newPage);
-      setFade(true); // inicia fade in
-    }, 300); // duração da animação
+      setFade(true);
+    }, 300);
   };
 
   const handlePrev = () => {
@@ -58,12 +59,12 @@ export default function Section({ title, link, data, pageSize = 10, onCardClick 
 
       <div className={`${styles.cardList} ${fade ? styles.fadeIn : styles.fadeOut}`}>
         {currentItems.map((service) => (
-  <ServiceCard
-    key={service.id}
-    {...service}
-    onClick={() => onCardClick && onCardClick(service)}
-  />
-))}
+          <ServiceCard
+            key={service.id}
+            {...service}
+            onClick={() => onCardClick && onCardClick(service)}
+          />
+        ))}
       </div>
 
       {totalPages > 1 && (

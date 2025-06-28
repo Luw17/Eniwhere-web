@@ -8,10 +8,20 @@ interface ServiceCardProps {
   id: string;
   status: string;
   color: "yellow" | "red" | "blue" | "green";
+  imageUrl?: string;  // nova prop para imagem
   onClick?: () => void;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ name, device, date, id, status, color, onClick }) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({
+  name,
+  device,
+  date,
+  id,
+  status,
+  color,
+  imageUrl,
+  onClick,
+}) => {
   const statusLabels: Record<string, string> = {
     pending: 'Pendente',
     in_progress: 'Em andamento',
@@ -26,17 +36,30 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ name, device, date, id, statu
       <div className={styles.header}>
         <span>{name}</span>
       </div>
-      <div className={styles.imagePlaceholder}></div>
+
+      <div className={styles.imagePlaceholder}>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={`Imagem do dispositivo de ${name}`}
+            className={styles.cardImage}
+          />
+        ) : (
+          <div className={styles.noImage}>Sem imagem</div> // opcional, pode deixar vazio ou placeholder
+        )}
+      </div>
+
       <div className={styles.id}>ID: {id}</div>
       <div className={styles.details}>
         <strong>{device}</strong>
         <p>{date}</p>
       </div>
+
       <button
         className={styles.status}
         style={{
           backgroundColor: color,
-          color: color === 'yellow' ? '#000' : '#fff'
+          color: color === 'yellow' ? '#000' : '#fff',
         }}
       >
         {translatedStatus}

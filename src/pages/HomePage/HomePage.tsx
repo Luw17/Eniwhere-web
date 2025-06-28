@@ -4,15 +4,6 @@ import Modal from "../../components/OrderModal/OrderModal";
 import OrderDetailsModal from "../../components/OrderDetailsModal/OrderDetailsModal";
 import styles from "./HomePage.module.css";
 
-type Service = {
-  id: string;
-  name: string;
-  device: string;
-  date: string;
-  status: string;
-  color: "yellow" | "blue" | "green" | "red";
-};
-
 type ServiceOrder = {
   id: number;
   created_at: string;
@@ -25,6 +16,7 @@ type ServiceOrder = {
       model: string;
     };
   };
+  firstImage?: string; // primeira imagem retornada direto pela API
   completed_at?: string | null;
   feedback?: number | null;
   warranty?: string | null;
@@ -32,6 +24,16 @@ type ServiceOrder = {
   work?: number | null;
   deadline?: string | null;
   problem?: string | null;
+};
+
+type Service = {
+  id: string;
+  name: string;
+  device: string;
+  date: string;
+  status: string;
+  color: "yellow" | "blue" | "green" | "red";
+  imageUrl?: string;
 };
 
 export default function HomePage() {
@@ -69,6 +71,10 @@ export default function HomePage() {
           color = "blue";
       }
 
+      const imageUrl = order.firstImage
+        ? `http://localhost:3001/uploads/${order.firstImage}`
+        : undefined;
+
       return {
         id: order.id.toString(),
         name: order.userDevice?.user?.name ?? "Usuário desconhecido",
@@ -76,6 +82,7 @@ export default function HomePage() {
         date: dateFormatted,
         status: order.status,
         color,
+        imageUrl,
       };
     });
   };

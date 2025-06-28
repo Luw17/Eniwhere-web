@@ -192,69 +192,80 @@ export default function Formulario() {
   };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("Token não encontrado. Faça login novamente.");
-      return;
-    }
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    alert("Token não encontrado. Faça login novamente.");
+    return;
+  }
 
-    try {
-      if (userExists === false) {
-        const resUser = await fetch("http://localhost:3001/eniwhere/user", {
-          method: "POST",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            document: form.document,
-            name: form.nome,
-            email: form.email,
-            phone: form.tel,
-            username: form.email,
-            userPassword: "senha123",
-            number: 0,
-          }),
-        });
-
-        if (!resUser.ok) {
-          const text = await resUser.text();
-          throw new Error(`Erro ao criar usuário: ${text}`);
-        }
-      }
-
-      const payload = {
-        workerId: 1,
-        document: form.document,
-        deviceId: Number(form.aparelho),
-        userId: undefined,
-        work: trampoParaNumero(form.trampo),
-        problem: form.trampo === "Outros…" ? form.trampoOutro : form.trampo,
-        deadline: form.prazo,
-        cost: Number(form.valor),
-        status: form.status,
-        storeId: 1,
-        userDeviceId: undefined,
-      };
-
-      const response = await fetch("http://localhost:3001/eniwhere/order", {
+  try {
+    if (userExists === false) {
+      const resUser = await fetch("http://localhost:3001/eniwhere/user", {
         method: "POST",
         headers: {
           Authorization: token,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          document: form.document,
+          name: form.nome,
+          email: form.email,
+          phone: form.tel,
+          username: form.email,
+          userPassword: "senha123",
+          number: 0,
+        }),
       });
 
-      if (!response.ok) throw new Error("Erro ao enviar o formulário");
-
-      alert("Formulário enviado!");
-      navigate("/");
-    } catch (err) {
-      alert(`Falha ao enviar formulário: ${err}`);
-      console.error(err);
+      if (!resUser.ok) {
+        const text = await resUser.text();
+        throw new Error(`Erro ao criar usuário: ${text}`);
+      }
     }
-  };
+
+    const formData = new FormData();
+
+    formData.append("workerId", "1");
+    formData.append("document", form.document);
+    formData.append("deviceId", form.aparelho);
+    formData.append("work", trampoParaNumero(form.trampo).toString());
+    formData.append(
+      "problem",
+      form.trampo === "Outros…" ? form.trampoOutro : form.trampo
+    );
+    formData.append("deadline", form.prazo);
+    
+    // ✅ Aqui: envia "0" se estiver vazio
+    formData.append("cost", form.valor.trim() === "" ? "0" : form.valor);
+
+    formData.append("status", form.status);
+    formData.append("storeId", "1");
+
+    form.imgs.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    const response = await fetch("http://localhost:3001/eniwhere/order", {
+      method: "POST",
+      headers: {
+        Authorization: token,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Erro ao enviar o formulário: ${err}`);
+    }
+
+    alert("Formulário enviado com sucesso!");
+    navigate("/");
+  } catch (err: any) {
+    alert(`Falha ao enviar formulário: ${err.message || err}`);
+    console.error(err);
+  }
+};
+
 
   return (
     <>
