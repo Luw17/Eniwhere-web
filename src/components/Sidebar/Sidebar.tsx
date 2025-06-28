@@ -1,6 +1,6 @@
 // src/components/Sidebar/Sidebar.tsx
 import { FiX } from "react-icons/fi";
-import { useNavigate } from "react-router-dom"; // Importando o hook useNavigate
+import { useNavigate } from "react-router-dom";
 import styles from "./Sidebar.module.css";
 
 type SidebarProps = {
@@ -9,16 +9,11 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const navigate = useNavigate(); // Hook de navegação
+  const navigate = useNavigate();
 
-  // Função para redirecionar ao clicar no logo
-  const handleLogoClick = () => {
-    navigate("/"); // Redireciona para a página inicial
-  };
-
-  // Função para redirecionar ao clicar no botão Analytics
-  const handleAnalyticsClick = () => {
-    navigate("/analytics"); // Redireciona para a página de Analytics
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    onClose();
   };
 
   return (
@@ -33,32 +28,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         src="../src/assets/logoeniwhere.svg"
         alt="Logo"
         className={styles.logo}
-        onClick={handleLogoClick} // Usando a função de navegação
+        onClick={() => handleNavigate("/")}
       />
 
       <button
         className={styles.createOrder}
-        onClick={() => navigate("/formulario")}
+        onClick={() => handleNavigate("/formulario")}
       >
         Criar ordem
       </button>
 
       <nav className={styles.nav}>
-        <a href="#">Histórico</a>
-        <a href="#">Agenda</a>
-        <a href="#">Configurações</a>
-        <a href="#" className={styles.assinatura}>
+        <a href="#" onClick={onClose}>Histórico</a>
+        <a href="#" onClick={onClose}>Agenda</a>
+        <a href="#" onClick={onClose}>Configurações</a>
+        <a href="#" onClick={onClose} className={styles.assinatura}>
           Assinatura
         </a>
       </nav>
 
       <div className={styles.plusFunctions}>
         <span className={styles.plusTitle}>Funções PLUS</span>
-        {/* Botão Analytics que agora redireciona para a rota /analytics */}
-        <button className={styles.analytics} onClick={handleAnalyticsClick}>
+        <button
+          className={styles.analytics}
+          onClick={() => handleNavigate("/analytics")}
+        >
           Analytics
         </button>
-        <button className={styles.entime}>Enitime</button>
+        <button className={styles.entime} onClick={onClose}>Enitime</button>
       </div>
     </aside>
   );

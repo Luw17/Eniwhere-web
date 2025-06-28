@@ -259,32 +259,36 @@ export default function Formulario() {
   return (
     <>
       {/* Modal para documento */}
-      {showDocumentModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h2>Informe o documento</h2>
-            <input
-              className={styles.input}
-              type="text"
-              placeholder="Documento"
-              value={documentInput}
-              onChange={(e) => setDocumentInput(e.target.value)}
-            />
-            <div
-              className={styles.actions}
-              style={{ justifyContent: "center", marginTop: 20 }}
-            >
-              <button
-                className={styles.primaryBtn}
-                onClick={verifyDocument}
-                disabled={isVerifying}
-              >
-                {isVerifying ? "Verificando..." : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+     {showDocumentModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2>Informe o documento</h2>
+      <input
+        className={styles.input}
+        type="text"
+        placeholder="Documento"
+        value={documentInput}
+        onChange={(e) => setDocumentInput(e.target.value)}
+      />
+      <div className={styles.actions} style={{ justifyContent: "center", marginTop: 20 }}>
+        <button
+          className={styles.cleanBtn}
+          onClick={() => navigate("/")}
+          style={{ marginRight: 10 }}
+        >
+          Fechar
+        </button>
+        <button
+          className={styles.primaryBtn}
+          onClick={verifyDocument}
+          disabled={isVerifying}
+        >
+          {isVerifying ? "Verificando..." : "Confirmar"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal escolha criar usuário ou redigitar documento */}
       {showUserChoiceModal && (

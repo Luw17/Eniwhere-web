@@ -52,6 +52,12 @@ function App() {
               isOpen={isSidebarOpen}
               onClose={() => setIsSidebarOpen(false)}
             />
+            {isSidebarOpen && (
+              <div
+                className={styles.overlay}
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
           </>
         )}
 
