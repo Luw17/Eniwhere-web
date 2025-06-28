@@ -11,7 +11,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [twoFACode, setTwoFACode] = useState("");
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
-  const [userId setUserId] = useState<number | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
 
