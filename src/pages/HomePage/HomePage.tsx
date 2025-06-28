@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Section from "../../components/Section/Section";
 import Modal from "../../components/OrderModal/OrderModal";
+import OrderDetailsModal from "../../components/OrderDetailsModal/OrderDetailsModal";
 import styles from "./HomePage.module.css";
 
 type Service = {
@@ -36,13 +37,11 @@ type ServiceOrder = {
 export default function HomePage() {
   const [pendingServices, setPendingServices] = useState<Service[]>([]);
   const [recentServices, setRecentServices] = useState<Service[]>([]);
+  const [inProgressServices, setInProgressServices] = useState<Service[]>([]);
 
-  const [pendingServicesFull, setPendingServicesFull] = useState<
-    ServiceOrder[]
-  >([]);
-  const [recentServicesFull, setRecentServicesFull] = useState<ServiceOrder[]>(
-    []
-  );
+  const [pendingServicesFull, setPendingServicesFull] = useState<ServiceOrder[]>([]);
+  const [recentServicesFull, setRecentServicesFull] = useState<ServiceOrder[]>([]);
+  const [inProgressServicesFull, setInProgressServicesFull] = useState<ServiceOrder[]>([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
@@ -81,11 +80,96 @@ export default function HomePage() {
     });
   };
 
+  const token = localStorage.getItem("authToken") ?? "";
+
+  const fetchRecentOrders = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch("http://localhost:3001/eniwhere/order/store", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
+
+      if (!response.ok) {
+        console.error("Erro na resposta da API (recentes):", response.statusText);
+        return;
+      }
+
+      const data: ServiceOrder[] = await response.json();
+      setRecentServicesFull(data);
+      setRecentServices(mapOrdersToServices(data));
+    } catch (error) {
+      console.error("Erro ao buscar ordens recentes:", error);
+    }
+  };
+
+  const fetchPendingOrders = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch("http://localhost:3001/eniwhere/order/storeNstatus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+        body: JSON.stringify({ status: "pending" }),
+      });
+
+      if (!response.ok) {
+        console.error("Erro na resposta da API (pendentes):", response.statusText);
+        return;
+      }
+
+      const data: ServiceOrder[] = await response.json();
+      setPendingServicesFull(data);
+      setPendingServices(mapOrdersToServices(data));
+    } catch (error) {
+      console.error("Erro ao buscar ordens pendentes:", error);
+    }
+  };
+
+  const fetchInProgressOrders = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch("http://localhost:3001/eniwhere/order/storeNstatus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+        body: JSON.stringify({ status: "in_progress" }),
+      });
+
+      if (!response.ok) {
+        console.error("Erro na resposta da API (em andamento):", response.statusText);
+        return;
+      }
+
+      const data: ServiceOrder[] = await response.json();
+      setInProgressServicesFull(data);
+      setInProgressServices(mapOrdersToServices(data));
+    } catch (error) {
+      console.error("Erro ao buscar ordens em andamento:", error);
+    }
+  };
+
+  const fetchAllOrders = async () => {
+    await Promise.all([fetchRecentOrders(), fetchPendingOrders(), fetchInProgressOrders()]);
+  };
+
+  useEffect(() => {
+    fetchAllOrders();
+  }, []);
+
   function handleCardClick(service: Service) {
     const idNum = Number(service.id);
     const fullOrder =
       pendingServicesFull.find((o) => o.id === idNum) ||
-      recentServicesFull.find((o) => o.id === idNum);
+      recentServicesFull.find((o) => o.id === idNum) ||
+      inProgressServicesFull.find((o) => o.id === idNum);
 
     if (fullOrder) {
       setSelectedOrder(fullOrder);
@@ -95,79 +179,16 @@ export default function HomePage() {
     }
   }
 
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      console.warn("Token não encontrado no localStorage.");
-      return;
-    }
-
-    const fetchRecentOrders = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3001/eniwhere/order/store",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          console.error(
-            "Erro na resposta da API (recentes):",
-            response.statusText
-          );
-          return;
-        }
-
-        const data: ServiceOrder[] = await response.json();
-        setRecentServicesFull(data);
-        setRecentServices(mapOrdersToServices(data));
-      } catch (error) {
-        console.error("Erro ao buscar ordens recentes:", error);
-      }
-    };
-
-    const fetchPendingOrders = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3001/eniwhere/order/storeNstatus",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token,
-            },
-            body: JSON.stringify({ status: "pending" }),
-          }
-        );
-
-        if (!response.ok) {
-          console.error(
-            "Erro na resposta da API (pendentes):",
-            response.statusText
-          );
-          return;
-        }
-
-        const data: ServiceOrder[] = await response.json();
-        setPendingServicesFull(data);
-        setPendingServices(mapOrdersToServices(data));
-      } catch (error) {
-        console.error("Erro ao buscar ordens pendentes:", error);
-      }
-    };
-
-    fetchRecentOrders();
-    fetchPendingOrders();
-  }, []);
-
   return (
     <div className={styles.container}>
       <main className={styles.main}>
+        <Section
+          title="Serviços em andamento"
+          link="Ver mais"
+          data={inProgressServices}
+          pageSize={9}
+          onCardClick={handleCardClick}
+        />
         <Section
           title="Serviços pendentes"
           link="Ver mais"
@@ -186,46 +207,32 @@ export default function HomePage() {
 
       {modalOpen && selectedOrder && (
         <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-          <h2>Ordem #{selectedOrder.id}</h2>
-          <p>
-            <strong>Status:</strong> {selectedOrder.status}
-          </p>
-          <p>
-            <strong>Cliente:</strong>{" "}
-            {selectedOrder.userDevice?.user?.name ?? "Usuário desconhecido"}
-          </p>
-          <p>
-            <strong>Dispositivo:</strong>{" "}
-            {selectedOrder.userDevice?.device?.model ?? "Desconhecido"}
-          </p>
-          <p>
-            <strong>Data criação:</strong>{" "}
-            {new Date(selectedOrder.created_at).toLocaleDateString("pt-BR")}
-          </p>
-          <p>
-            <strong>Data conclusão:</strong>{" "}
-            {selectedOrder.completed_at
-              ? new Date(selectedOrder.completed_at).toLocaleDateString("pt-BR")
-              : "—"}
-          </p>
-          <p>
-            <strong>Custo:</strong> {selectedOrder.cost ?? "—"}
-          </p>
-          <p>
-            <strong>Trabalho:</strong> {selectedOrder.work ?? "—"}
-          </p>
-          <p>
-            <strong>Garantia:</strong> {selectedOrder.warranty ?? "—"}
-          </p>
-          <p>
-            <strong>Feedback:</strong> {selectedOrder.feedback ?? "—"}
-          </p>
-          <p>
-            <strong>Prazo:</strong> {selectedOrder.deadline ?? "—"}
-          </p>
-          <p>
-            <strong>Problema:</strong> {selectedOrder.problem ?? "—"}
-          </p>
+          <OrderDetailsModal
+            order={selectedOrder}
+            onClose={() => setModalOpen(false)}
+            onUpdate={async (updatedOrder) => {
+              setSelectedOrder(updatedOrder);
+
+              // Atualizar listas locais imediatamente
+              const updateList = (
+                listFull: ServiceOrder[],
+                setListFull: React.Dispatch<React.SetStateAction<ServiceOrder[]>>,
+                listSimple: Service[],
+                setListSimple: React.Dispatch<React.SetStateAction<Service[]>>
+              ) => {
+                const newFull = listFull.map((o) => (o.id === updatedOrder.id ? updatedOrder : o));
+                setListFull(newFull);
+                setListSimple(mapOrdersToServices(newFull));
+              };
+
+              updateList(pendingServicesFull, setPendingServicesFull, pendingServices, setPendingServices);
+              updateList(recentServicesFull, setRecentServicesFull, recentServices, setRecentServices);
+              updateList(inProgressServicesFull, setInProgressServicesFull, inProgressServices, setInProgressServices);
+
+              // Depois refazer o fetch para garantir dados atualizados
+              await fetchAllOrders();
+            }}
+          />
         </Modal>
       )}
     </div>

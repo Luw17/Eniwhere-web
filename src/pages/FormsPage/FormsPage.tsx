@@ -6,16 +6,16 @@ interface FormData {
   nome: string;
   tel: string;
   email: string;
-  aparelho: string; // agora armazena o ID (string)
+  aparelho: string;
   trampo: string;
   trampoOutro: string;
   imgs: File[];
   valor: string;
   prazo: string;
   garantia: string;
-  status: string; // vai guardar "pending" ou "in_progress"
+  status: string;
   obs: string;
-  document: string; // novo campo para documento
+  document: string;
 }
 
 interface Device {
@@ -36,9 +36,10 @@ export default function Formulario() {
   const [step, setStep] = useState<1 | 2>(1);
   const [devices, setDevices] = useState<Device[]>([]);
   const [showDocumentModal, setShowDocumentModal] = useState(true);
+  const [showUserChoiceModal, setShowUserChoiceModal] = useState(false);
   const [documentInput, setDocumentInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [canProceed, setCanProceed] = useState(false);
+  const [userExists, setUserExists] = useState<boolean | null>(null);
 
   const [form, setForm] = useState<FormData>({
     nome: "",
@@ -51,7 +52,7 @@ export default function Formulario() {
     valor: "",
     prazo: "",
     garantia: "",
-    status: "", // inicia vazio, obrigatório no step 2
+    status: "",
     obs: "",
     document: "",
   });
@@ -92,7 +93,6 @@ export default function Formulario() {
     setForm({ ...form, imgs: [...form.imgs, ...files] });
   };
 
-  // Verifica documento via API
   const verifyDocument = async () => {
     if (!documentInput.trim()) {
       alert("Digite o documento.");
@@ -123,26 +123,62 @@ export default function Formulario() {
 
       if (!res.ok) throw new Error("Erro na verificação");
 
-      const json = await res.json();
+      const isValid = await res.json();
 
-      if (json === true) {
-        setForm((prev) => ({ ...prev, document: documentInput }));
-        setCanProceed(true);
+      if (isValid === true) {
+        const userRes = await fetch(
+          `http://localhost:3001/eniwhere/user/document/${encodeURIComponent(
+            documentInput
+          )}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+
+        if (!userRes.ok) throw new Error("Erro ao buscar dados do usuário");
+
+        const user = await userRes.json();
+
+        setForm((prev) => ({
+          ...prev,
+          document: documentInput,
+          nome: user.name || "",
+          tel: user.phone || "",
+          email: user.email || "",
+        }));
+
+        setUserExists(true);
         setShowDocumentModal(false);
       } else {
-        alert("Documento não encontrado ou inválido.");
-        setCanProceed(false);
+        setUserExists(false);
+        setShowDocumentModal(false);
+        setShowUserChoiceModal(true);
       }
     } catch (err) {
       alert("Erro ao verificar documento.");
       console.error(err);
-      setCanProceed(false);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // Converte "trampo" texto para código numérico, exemplo simples:
+  const handleCreateUserChoice = () => {
+    setForm((prev) => ({
+      ...prev,
+      document: documentInput,
+    }));
+    setShowUserChoiceModal(false);
+  };
+
+  const handleRedigitarDocumento = () => {
+    setShowUserChoiceModal(false);
+    setShowDocumentModal(true);
+    setDocumentInput("");
+  };
+
   const trampoParaNumero = (trampo: string): number => {
     const map: Record<string, number> = {
       "Troca de tela": 1,
@@ -162,21 +198,45 @@ export default function Formulario() {
       return;
     }
 
-    const payload = {
-      workerId: 1, // ajuste conforme seu contexto
-      document: form.document,
-      deviceId: Number(form.aparelho),
-      userId: undefined, // backend resolve
-      work: trampoParaNumero(form.trampo),
-      problem: form.trampo === "Outros…" ? form.trampoOutro : form.trampo,
-      deadline: form.prazo,
-      cost: Number(form.valor),
-      status: form.status, // vai enviar "pending" ou "in_progress"
-      storeId: 1, // ajuste conforme seu contexto
-      userDeviceId: undefined, // backend resolve
-    };
-
     try {
+      if (userExists === false) {
+        const resUser = await fetch("http://localhost:3001/eniwhere/user", {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            document: form.document,
+            name: form.nome,
+            email: form.email,
+            phone: form.tel,
+            username: form.email,
+            userPassword: "senha123",
+            number: 0,
+          }),
+        });
+
+        if (!resUser.ok) {
+          const text = await resUser.text();
+          throw new Error(`Erro ao criar usuário: ${text}`);
+        }
+      }
+
+      const payload = {
+        workerId: 1,
+        document: form.document,
+        deviceId: Number(form.aparelho),
+        userId: undefined,
+        work: trampoParaNumero(form.trampo),
+        problem: form.trampo === "Outros…" ? form.trampoOutro : form.trampo,
+        deadline: form.prazo,
+        cost: Number(form.valor),
+        status: form.status,
+        storeId: 1,
+        userDeviceId: undefined,
+      };
+
       const response = await fetch("http://localhost:3001/eniwhere/order", {
         method: "POST",
         headers: {
@@ -191,7 +251,7 @@ export default function Formulario() {
       alert("Formulário enviado!");
       navigate("/");
     } catch (err) {
-      alert("Falha ao enviar formulário");
+      alert(`Falha ao enviar formulário: ${err}`);
       console.error(err);
     }
   };
@@ -226,11 +286,36 @@ export default function Formulario() {
         </div>
       )}
 
+      {/* Modal escolha criar usuário ou redigitar documento */}
+      {showUserChoiceModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2>Usuário não encontrado</h2>
+            <p>Deseja cadastrar ou digitar outro documento?</p>
+            <div className={styles.actions}>
+              <button
+                className={styles.cleanBtn}
+                onClick={handleRedigitarDocumento}
+              >
+                Redigitar
+              </button>
+              <button
+                className={styles.primaryBtn}
+                onClick={handleCreateUserChoice}
+              >
+                Cadastrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main
         className={styles.page}
         style={{
-          filter: showDocumentModal ? "blur(2px)" : "none",
-          pointerEvents: showDocumentModal ? "none" : "auto",
+          filter: showDocumentModal || showUserChoiceModal ? "blur(2px)" : "none",
+          pointerEvents:
+            showDocumentModal || showUserChoiceModal ? "none" : "auto",
         }}
       >
         <section className={styles.card}>
@@ -247,30 +332,35 @@ export default function Formulario() {
           {step === 1 && (
             <>
               <h1 className={styles.title}>FORMULÁRIO</h1>
-              <h2 className={styles.section}>QUEM É O CLIENTE?</h2>
-              <div className={styles.row}>
-                <input
-                  className={styles.input}
-                  placeholder="Nome"
-                  value={form.nome}
-                  onChange={handle("nome")}
-                />
-                <input
-                  className={styles.input}
-                  placeholder="Telefone"
-                  value={form.tel}
-                  onChange={handle("tel")}
-                  maxLength={14}
-                />
-              </div>
-              <input
-                className={styles.input}
-                placeholder="E-mail"
-                value={form.email}
-                onChange={handle("email")}
-              />
 
-              {/* Select de dispositivos */}
+              {/* Exibir campos nome, telefone e email só se usuário NÃO existir */}
+              {userExists === false && (
+                <>
+                  <h2 className={styles.section}>QUEM É O CLIENTE?</h2>
+                  <div className={styles.row}>
+                    <input
+                      className={styles.input}
+                      placeholder="Nome"
+                      value={form.nome}
+                      onChange={handle("nome")}
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Telefone"
+                      value={form.tel}
+                      onChange={handle("tel")}
+                      maxLength={14}
+                    />
+                  </div>
+                  <input
+                    className={styles.input}
+                    placeholder="E-mail"
+                    value={form.email}
+                    onChange={handle("email")}
+                  />
+                </>
+              )}
+
               <select
                 className={styles.select}
                 value={form.aparelho}
@@ -340,6 +430,7 @@ export default function Formulario() {
                   ))}
                 </ul>
               </div>
+
               {form.trampo === "Outros…" && (
                 <input
                   className={styles.input}
@@ -348,6 +439,7 @@ export default function Formulario() {
                   onChange={handle("trampoOutro")}
                 />
               )}
+
               <div className={styles.actions}>
                 <button
                   type="reset"
@@ -371,13 +463,7 @@ export default function Formulario() {
                 <button
                   onClick={() => setStep(2)}
                   className={styles.primaryBtn}
-                  disabled={
-                    !form.nome ||
-                    !form.tel ||
-                    !form.trampo ||
-                    !form.aparelho ||
-                    !form.document
-                  }
+                  disabled={!form.trampo || !form.aparelho || !form.document}
                 >
                   Próximo
                 </button>
@@ -447,6 +533,8 @@ export default function Formulario() {
                 ))}
               </div>
 
+              {/* Parte de observação oculta por enquanto */}
+              {/*
               <details className={styles.obsContainer}>
                 <summary className={styles.obsHeader}>Observações?</summary>
                 <textarea
@@ -457,6 +545,7 @@ export default function Formulario() {
                   onChange={handle("obs")}
                 />
               </details>
+              */}
 
               <p className={styles.note}>
                 Valor, prazo, status e garantia podem ser atualizados no futuro
