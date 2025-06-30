@@ -42,7 +42,22 @@
   padding: 10px;
   border-radius: 10px;
   border: 1px solid #aaa;
+  font-size: 1rem;
+  font-family: inherit;
+  appearance: none;
+  box-sizing: border-box;
+  width: 100%;
 }
+.input-group input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-group input:focus {
+  outline: none;
+  border: 2px solid black;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
 
 /* Esqueci a senha */
 .forgot-password {
