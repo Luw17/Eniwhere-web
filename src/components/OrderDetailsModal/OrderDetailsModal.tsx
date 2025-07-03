@@ -69,11 +69,16 @@ export default function OrderDetailsModal({ order, onClose, onUpdate }: OrderDet
       return;
     }
 
+    const parseNullableDecimal = (value: string): number | null => {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? null : parsed;
+    };
+
     const safeStatus = editStatus && editStatus.trim() !== "" ? editStatus : order.status;
 
     const body = {
-      cost: editCost ? parseFloat(editCost) : null,
-      work: editWork ? parseFloat(editWork) : null,
+      cost: parseNullableDecimal(editCost),
+      work: parseNullableDecimal(editWork),
       warranty: editWarranty || null,
       feedback: editFeedback ? parseInt(editFeedback) : null,
       deadline: editDeadline || null,
@@ -164,28 +169,27 @@ export default function OrderDetailsModal({ order, onClose, onUpdate }: OrderDet
         </p>
 
         <div className={styles.statusButtons}>
-  {[
-    { value: "pending", label: "Pendente", color: "#999" },
-    { value: "in_progress", label: "Em andamento", color: "#ffeb00" },
-    { value: "completed", label: "Concluído", color: "#4CAF50" },
-    { value: "cancelled", label: "Cancelado", color: "#f44336" },
-  ].map(({ value, label, color }) => (
-    <button
-      key={value}
-      type="button"
-      style={{
-        backgroundColor: editStatus === value ? color : "transparent",
-        color: editStatus === value ? (value === "pending" ? "#000" : "#000") : "#444",
-        border: `2px solid ${color}`,
-      }}
-      onClick={() => setEditStatus(value)}
-      className={styles.statusButton}
-    >
-      {label}
-    </button>
-  ))}
-</div>
-
+          {[
+            { value: "pending", label: "Pendente", color: "#999" },
+            { value: "in_progress", label: "Em andamento", color: "#ffeb00" },
+            { value: "completed", label: "Concluído", color: "#4CAF50" },
+            { value: "cancelled", label: "Cancelado", color: "#f44336" },
+          ].map(({ value, label, color }) => (
+            <button
+              key={value}
+              type="button"
+              style={{
+                backgroundColor: editStatus === value ? color : "transparent",
+                color: editStatus === value ? "#000" : "#444",
+                border: `2px solid ${color}`,
+              }}
+              onClick={() => setEditStatus(value)}
+              className={styles.statusButton}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <button onClick={handleSave} style={{ marginTop: "1rem" }}>
           Salvar
