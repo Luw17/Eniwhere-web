@@ -228,7 +228,7 @@ export default function Formulario() {
     formData.append("workerId", "1");
     formData.append("document", form.document);
     formData.append("deviceId", form.aparelho);
-    formData.append("work", trampoParaNumero(form.trampo).toString());
+    formData.append("work", "0");
     formData.append(
       "problem",
       form.trampo === "Outros…" ? form.trampoOutro : form.trampo
