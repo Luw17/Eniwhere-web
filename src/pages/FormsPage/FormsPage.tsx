@@ -179,18 +179,6 @@ export default function Formulario() {
     setDocumentInput("");
   };
 
-  const trampoParaNumero = (trampo: string): number => {
-    const map: Record<string, number> = {
-      "Troca de tela": 1,
-      "Troca de bateria": 2,
-      "Reparo de software": 3,
-      "Troca de conector de carga": 4,
-      "Troca/adição de película": 5,
-      "Outros…": 6,
-    };
-    return map[trampo] || 0;
-  };
-
   const handleSubmit = async () => {
   const token = localStorage.getItem("authToken");
   if (!token) {

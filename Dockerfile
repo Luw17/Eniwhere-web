@@ -1,20 +1,18 @@
-# Usa imagem base do Node.js
-FROM node:20
-
-# Define o diretório de trabalho dentro do container
+FROM node:20 AS base
 WORKDIR /app
-
-# Copia apenas os arquivos de dependência
-COPY package.json package-lock.json ./
-
-# Instala as dependências de forma limpa
+COPY package*.json ./
 RUN npm ci
 
-# Copia o restante dos arquivos da aplicação
+FROM base AS development
 COPY . .
-
-# Expõe a porta padrão do Vite
 EXPOSE 5173
+CMD ["npm", "run", "dev"]
 
-# Comando para rodar com hot reload e permitir acesso externo
-CMD ["npm", "run", "dev", "--", "--host"]
+FROM base AS builder
+COPY . .
+RUN npm run build
+
+FROM nginx:stable-alpine AS production
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "g", "daemon off;"]

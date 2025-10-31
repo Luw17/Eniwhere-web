@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styles from "./LoginPage.module.css";
 
+// A URL base da API agora vem da variável de ambiente.
+// O Vite escolhe o arquivo .env correto dependendo do ambiente (dev vs prod).
+const apiUrl = import.meta.env.VITE_API_URL;
+
 type LoginPageProps = {
   onLogin: () => void;
 };
@@ -15,14 +19,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
 
-    
-
   useEffect(() => {
     const checkAuthToken = async () => {
       const token = localStorage.getItem("authToken");
       if (token) {
         try {
-          const response = await fetch("http://localhost:3001/eniwhere/verify-token", {
+          const response = await fetch(`${apiUrl}/eniwhere/verify-token`, {
             method: "GET",
             headers: {
               Authorization: token,
@@ -47,74 +49,67 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     checkAuthToken();
   }, [onLogin]);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoggingIn(true);
-
-  try {
-    const response = await fetch("http://localhost:3001/eniwhere/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, userPassword: password }),
-    });
-
-    const result = await response.json();
-
-    if(!result.id){
-      alert("Usuário ou senha inválidos.");
-      return;
-    }
-    else if (result.role !== "store") {
-      alert("Apenas usuários com permissão de loja podem acessar.");
-      return;
-    }
-    else{
-      setUserId(result.id);
-      setShow2FAModal(true);
-    }
-  } catch (error) {
-    console.error("Erro ao conectar à API:", error);
-    alert("Erro na conexão com o servidor.");
-  } finally {
-    setIsLoggingIn(false);
-  }
-};
-
-
-
-const handle2FAVerification = async () => {
-  if (!userId) return;
-  setIsVerifying2FA(true);
-
-  try {
-    const response = await fetch(
-      "http://localhost:3001/eniwhere/verify-2fa",
-      {
+    try {
+      const response = await fetch(`${apiUrl}/eniwhere/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, code: twoFACode }),
+        body: JSON.stringify({ username, userPassword: password }),
+      });
+
+      const result = await response.json();
+
+      if (!result.id) {
+        alert("Usuário ou senha inválidos.");
+        return;
+      } else if (result.role !== "store") {
+        alert("Apenas usuários com permissão de loja podem acessar.");
+        return;
+      } else {
+        setUserId(result.id);
+        setShow2FAModal(true);
       }
-    );
-
-    const result = await response.text();
-
-    if (result.startsWith("Bearer ")) {
-      localStorage.setItem("authToken", result);
-      setShow2FAModal(false);
-      onLogin();
-    } else {
-      alert("Código 2FA inválido.");
+    } catch (error) {
+      console.error("Erro ao conectar à API:", error);
+      alert("Erro na conexão com o servidor.");
+    } finally {
+      setIsLoggingIn(false);
     }
-  } catch (error) {
-    console.error("Erro na verificação 2FA:", error);
-    alert("Erro ao verificar o código 2FA.");
-  } finally {
-    setIsVerifying2FA(false);
-  }
-};
+  };
 
+  const handle2FAVerification = async () => {
+    if (!userId) return;
+    setIsVerifying2FA(true);
 
+    try {
+      const response = await fetch(
+        `${apiUrl}/eniwhere/verify-2fa`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, code: twoFACode }),
+        }
+      );
+
+      const result = await response.text();
+
+      if (result.startsWith("Bearer ")) {
+        localStorage.setItem("authToken", result);
+        setShow2FAModal(false);
+        onLogin();
+      } else {
+        alert("Código 2FA inválido.");
+      }
+    } catch (error) {
+      console.error("Erro na verificação 2FA:", error);
+      alert("Erro ao verificar o código 2FA.");
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
 
   if (isCheckingToken) {
     return <div>Verificando autenticação...</div>;
@@ -159,7 +154,6 @@ const handle2FAVerification = async () => {
             {isLoggingIn ? "Entrando..." : "Entrar"}
           </button>
 
-
           <div className={styles["signup-text"]}>
             não possui conta? <a href="#">cadastre-se</a>
           </div>
@@ -192,7 +186,6 @@ const handle2FAVerification = async () => {
             >
               {isVerifying2FA ? "Verificando..." : "Verificar"}
             </button>
-
           </div>
         </div>
       )}

@@ -224,7 +224,7 @@ export default function HomePage() {
               const updateList = (
                 listFull: ServiceOrder[],
                 setListFull: React.Dispatch<React.SetStateAction<ServiceOrder[]>>,
-                listSimple: Service[],
+                _listSimple: Service[],
                 setListSimple: React.Dispatch<React.SetStateAction<Service[]>>
               ) => {
                 const newFull = listFull.map((o) => (o.id === updatedOrder.id ? updatedOrder : o));
