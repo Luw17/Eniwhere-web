@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import styles from "./OrderDetailsModal.module.css";
 
+// DEFINIÇÃO DA URL BASE (Local ou Nuvem)
+const apiUrl = import.meta.env.VITE_API_URL;
+
 type Picture = {
   id: number;
   path: string;
@@ -87,7 +90,8 @@ export default function OrderDetailsModal({ order, onClose, onUpdate }: OrderDet
     };
 
     try {
-      const response = await fetch(`http://localhost:3001/eniwhere/order/${order.id}`, {
+      // AJUSTE AQUI: Usando apiUrl
+      const response = await fetch(`${apiUrl}/eniwhere/order/${order.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -200,7 +204,8 @@ export default function OrderDetailsModal({ order, onClose, onUpdate }: OrderDet
         {pictures.length > 0 ? (
           <>
             <img
-              src={`http://localhost:3001/uploads/${pictures[currentImageIndex].path}`}
+              // AJUSTE AQUI: Usando apiUrl
+              src={`${apiUrl}/uploads/${pictures[currentImageIndex].path}`}
               alt={`Imagem ${currentImageIndex + 1} da ordem ${order.id}`}
               className={styles.carouselImage}
             />

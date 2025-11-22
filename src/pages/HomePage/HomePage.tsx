@@ -4,6 +4,9 @@ import Modal from "../../components/OrderModal/OrderModal";
 import OrderDetailsModal from "../../components/OrderDetailsModal/OrderDetailsModal";
 import styles from "./HomePage.module.css";
 
+// DEFINIÇÃO DA URL BASE (Local ou Nuvem)
+const apiUrl = import.meta.env.VITE_API_URL;
+
 type ServiceOrder = {
   id: number;
   created_at: string;
@@ -71,8 +74,9 @@ export default function HomePage() {
           color = "blue";
       }
 
+      // AJUSTE AQUI: Usando apiUrl para imagens
       const imageUrl = order.firstImage
-        ? `http://localhost:3001/uploads/${order.firstImage}`
+        ? `${apiUrl}/uploads/${order.firstImage}`
         : undefined;
 
       return {
@@ -92,7 +96,8 @@ export default function HomePage() {
   const fetchRecentOrders = async () => {
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:3001/eniwhere/order/store", {
+      // AJUSTE AQUI: Usando apiUrl
+      const response = await fetch(`${apiUrl}/eniwhere/order/store`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +121,8 @@ export default function HomePage() {
   const fetchPendingOrders = async () => {
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:3001/eniwhere/order/storeNstatus", {
+      // AJUSTE AQUI: Usando apiUrl
+      const response = await fetch(`${apiUrl}/eniwhere/order/storeNstatus`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -141,7 +147,8 @@ export default function HomePage() {
   const fetchInProgressOrders = async () => {
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:3001/eniwhere/order/storeNstatus", {
+      // AJUSTE AQUI: Usando apiUrl
+      const response = await fetch(`${apiUrl}/eniwhere/order/storeNstatus`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

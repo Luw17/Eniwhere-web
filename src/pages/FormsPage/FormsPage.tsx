@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsPage.module.css";
 
+// DEFINIÇÃO DA URL BASE (Local ou Nuvem)
+const apiUrl = import.meta.env.VITE_API_URL;
+
 interface FormData {
   nome: string;
   tel: string;
@@ -64,7 +67,8 @@ export default function Formulario() {
       return;
     }
 
-    fetch("http://localhost:3001/eniwhere/devices", {
+    // AJUSTE AQUI: Usando apiUrl
+    fetch(`${apiUrl}/eniwhere/devices`, {
       headers: {
         Authorization: token,
       },
@@ -109,10 +113,9 @@ export default function Formulario() {
         return;
       }
 
+      // AJUSTE AQUI: Usando apiUrl
       const res = await fetch(
-        `http://localhost:3001/eniwhere/user/verify/${encodeURIComponent(
-          documentInput
-        )}`,
+        `${apiUrl}/eniwhere/user/verify/${encodeURIComponent(documentInput)}`,
         {
           method: "GET",
           headers: {
@@ -126,10 +129,9 @@ export default function Formulario() {
       const isValid = await res.json();
 
       if (isValid === true) {
+        // AJUSTE AQUI: Usando apiUrl
         const userRes = await fetch(
-          `http://localhost:3001/eniwhere/user/document/${encodeURIComponent(
-            documentInput
-          )}`,
+          `${apiUrl}/eniwhere/user/document/${encodeURIComponent(documentInput)}`,
           {
             method: "GET",
             headers: {
@@ -180,114 +182,115 @@ export default function Formulario() {
   };
 
   const handleSubmit = async () => {
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    alert("Token não encontrado. Faça login novamente.");
-    return;
-  }
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("Token não encontrado. Faça login novamente.");
+      return;
+    }
 
-  try {
-    if (userExists === false) {
-      const resUser = await fetch("http://localhost:3001/eniwhere/user", {
+    try {
+      if (userExists === false) {
+        // AJUSTE AQUI: Usando apiUrl
+        const resUser = await fetch(`${apiUrl}/eniwhere/user`, {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            document: form.document,
+            name: form.nome,
+            email: form.email,
+            phone: form.tel,
+            username: form.email,
+            userPassword: "senha123",
+            number: 0,
+          }),
+        });
+
+        if (!resUser.ok) {
+          const text = await resUser.text();
+          throw new Error(`Erro ao criar usuário: ${text}`);
+        }
+      }
+
+      const formData = new FormData();
+
+      formData.append("workerId", "1");
+      formData.append("document", form.document);
+      formData.append("deviceId", form.aparelho);
+      formData.append("work", "0");
+      formData.append(
+        "problem",
+        form.trampo === "Outros…" ? form.trampoOutro : form.trampo
+      );
+      formData.append("deadline", form.prazo);
+
+      // ✅ Aqui: envia "0" se estiver vazio
+      formData.append("cost", form.valor.trim() === "" ? "0" : form.valor);
+
+      formData.append("status", form.status);
+      formData.append("storeId", "1");
+
+      form.imgs.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      // AJUSTE AQUI: Usando apiUrl
+      const response = await fetch(`${apiUrl}/eniwhere/order`, {
         method: "POST",
         headers: {
           Authorization: token,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          document: form.document,
-          name: form.nome,
-          email: form.email,
-          phone: form.tel,
-          username: form.email,
-          userPassword: "senha123",
-          number: 0,
-        }),
+        body: formData,
       });
 
-      if (!resUser.ok) {
-        const text = await resUser.text();
-        throw new Error(`Erro ao criar usuário: ${text}`);
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Erro ao enviar o formulário: ${err}`);
       }
+
+      alert("Formulário enviado com sucesso!");
+      navigate("/");
+    } catch (err: any) {
+      alert(`Falha ao enviar formulário: ${err.message || err}`);
+      console.error(err);
     }
-
-    const formData = new FormData();
-
-    formData.append("workerId", "1");
-    formData.append("document", form.document);
-    formData.append("deviceId", form.aparelho);
-    formData.append("work", "0");
-    formData.append(
-      "problem",
-      form.trampo === "Outros…" ? form.trampoOutro : form.trampo
-    );
-    formData.append("deadline", form.prazo);
-    
-    // ✅ Aqui: envia "0" se estiver vazio
-    formData.append("cost", form.valor.trim() === "" ? "0" : form.valor);
-
-    formData.append("status", form.status);
-    formData.append("storeId", "1");
-
-    form.imgs.forEach((file) => {
-      formData.append("images", file);
-    });
-
-    const response = await fetch("http://localhost:3001/eniwhere/order", {
-      method: "POST",
-      headers: {
-        Authorization: token,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Erro ao enviar o formulário: ${err}`);
-    }
-
-    alert("Formulário enviado com sucesso!");
-    navigate("/");
-  } catch (err: any) {
-    alert(`Falha ao enviar formulário: ${err.message || err}`);
-    console.error(err);
-  }
-};
-
+  };
 
   return (
     <>
       {/* Modal para documento */}
-     {showDocumentModal && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
-      <h2>Informe o documento</h2>
-      <input
-        className={styles.input}
-        type="text"
-        placeholder="Documento"
-        value={documentInput}
-        onChange={(e) => setDocumentInput(e.target.value)}
-      />
-      <div className={styles.actions} style={{ justifyContent: "center", marginTop: 20 }}>
-        <button
-          className={styles.cleanBtn}
-          onClick={() => navigate("/")}
-          style={{ marginRight: 10 }}
-        >
-          Fechar
-        </button>
-        <button
-          className={styles.primaryBtn}
-          onClick={verifyDocument}
-          disabled={isVerifying}
-        >
-          {isVerifying ? "Verificando..." : "Confirmar"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {showDocumentModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2>Informe o documento</h2>
+            <input
+              className={styles.input}
+              type="text"
+              placeholder="Documento"
+              value={documentInput}
+              onChange={(e) => setDocumentInput(e.target.value)}
+            />
+            <div className={styles.actions} style={{ justifyContent: "center", marginTop: 20 }}>
+              <button
+                className={styles.cleanBtn}
+                onClick={() => navigate("/")}
+                style={{ marginRight: 10 }}
+              >
+                Fechar
+              </button>
+              <button
+                className={styles.primaryBtn}
+                onClick={verifyDocument}
+                disabled={isVerifying}
+              >
+                {isVerifying ? "Verificando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal escolha criar usuário ou redigitar documento */}
       {showUserChoiceModal && (
@@ -535,20 +538,6 @@ export default function Formulario() {
                   </label>
                 ))}
               </div>
-
-              {/* Parte de observação oculta por enquanto */}
-              {/*
-              <details className={styles.obsContainer}>
-                <summary className={styles.obsHeader}>Observações?</summary>
-                <textarea
-                  rows={6}
-                  placeholder="Insira aqui observações e pontos a destacar neste pedido"
-                  className={styles.textarea}
-                  value={form.obs}
-                  onChange={handle("obs")}
-                />
-              </details>
-              */}
 
               <p className={styles.note}>
                 Valor, prazo, status e garantia podem ser atualizados no futuro
